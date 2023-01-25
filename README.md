@@ -3,6 +3,13 @@
     Permify Swagger
 </h1>
 
+<div style="text-align: center">
+
+<a href="https://permify.github.io/permify-swagger" rel="View in Swagger">![View in Swagger](http://jessemillar.github.io/view-in-swagger-button/button.svg)</a>
+
+</div>
+
+
 Permify is an **open-source authorization service** for creating and maintaining fine-grained authorizations accross
 your individual applications and services.
 
