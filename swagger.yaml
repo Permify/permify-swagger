@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Permify API
   description: Permify is an open-source authorization service for creating and maintaining fine-grained authorizations across your individual applications and services. Permify converts authorization data as relational tuples into a database you point at. We called that database a Write Database (WriteDB) and it behaves as a centralized data source for your authorization system. You can model of your authorization with Permify's DSL - Permify Schema - and perform access checks with a single API call anywhere on your stack. Access decisions made according to stored relational tuples.
-  version: v0.5.0
+  version: v0.5.2
   contact:
     name: API Support
     url: https://github.com/Permify/permify/issues
@@ -530,6 +530,72 @@ paths:
             description: PermissionSubjectPermissionRequest is the request message for the SubjectPermission method in the Permission service.
       tags:
         - Permission
+  /v1/tenants/{tenant_id}/relationships/delete:
+    post:
+      summary: delete relationships
+      operationId: relationships.delete
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/RelationshipDeleteResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              filter:
+                $ref: '#/definitions/TupleFilter'
+            title: RelationshipDeleteRequest
+      tags:
+        - Data
+  /v1/tenants/{tenant_id}/relationships/write:
+    post:
+      summary: create new relationships
+      operationId: relationships.write
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/RelationshipWriteResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          description: Unique identifier for the tenant with specific constraints.
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              metadata:
+                $ref: '#/definitions/RelationshipWriteRequestMetadata'
+                description: Metadata for the request. It's required.
+              tuples:
+                type: array
+                items:
+                  type: object
+                  $ref: '#/definitions/Tuple'
+                description: List of tuples for the request. Must have between 1 and 100 items.
+            description: Represents a request to write relationship data.
+      tags:
+        - Data
   /v1/tenants/{tenant_id}/schemas/read:
     post:
       summary: read your authorization model
@@ -785,12 +851,8 @@ definitions:
       attribute:
         type: string
         title: Name of the attribute
-      type:
-        type: string
-        title: Type of the attribute
       value:
         $ref: '#/definitions/Any'
-        title: Value of the attribute
     description: Attribute represents an attribute of an entity with a specific type and value.
   AttributeDefinition:
     type: object
@@ -842,18 +904,26 @@ definitions:
     enum:
       - ATTRIBUTE_TYPE_UNSPECIFIED
       - ATTRIBUTE_TYPE_BOOLEAN
+      - ATTRIBUTE_TYPE_BOOLEAN_ARRAY
       - ATTRIBUTE_TYPE_STRING
+      - ATTRIBUTE_TYPE_STRING_ARRAY
       - ATTRIBUTE_TYPE_INTEGER
+      - ATTRIBUTE_TYPE_INTEGER_ARRAY
       - ATTRIBUTE_TYPE_DOUBLE
+      - ATTRIBUTE_TYPE_DOUBLE_ARRAY
     default: ATTRIBUTE_TYPE_UNSPECIFIED
     description: |-
       Enumerates the types of attribute.
 
        - ATTRIBUTE_TYPE_UNSPECIFIED: Not specified attribute type. This is the default value.
        - ATTRIBUTE_TYPE_BOOLEAN: A boolean attribute type.
+       - ATTRIBUTE_TYPE_BOOLEAN_ARRAY: A boolean array attribute type.
        - ATTRIBUTE_TYPE_STRING: A string attribute type.
+       - ATTRIBUTE_TYPE_STRING_ARRAY: A string array attribute type.
        - ATTRIBUTE_TYPE_INTEGER: An integer attribute type.
+       - ATTRIBUTE_TYPE_INTEGER_ARRAY: An integer array attribute type.
        - ATTRIBUTE_TYPE_DOUBLE: A double attribute type.
+       - ATTRIBUTE_TYPE_DOUBLE_ARRAY: A double array attribute type.
   CheckResult:
     type: string
     enum:
@@ -1673,6 +1743,12 @@ definitions:
         type: string
         description: The name of the referenced relation, which follows a specific string pattern and has a maximum byte size.
     description: The RelationReference message provides a reference to a specific relation.
+  RelationshipDeleteResponse:
+    type: object
+    properties:
+      snap_token:
+        type: string
+    title: RelationshipDeleteResponse
   RelationshipReadRequestMetadata:
     type: object
     properties:
@@ -1697,6 +1773,18 @@ definitions:
     description: |-
       RelationshipReadResponse defines the structure of the response after reading relationships.
       It includes the tuples representing the relationships and a continuous token for handling result pagination.
+  RelationshipWriteRequestMetadata:
+    type: object
+    properties:
+      schema_version:
+        type: string
+    title: RelationshipWriteRequestMetadata
+  RelationshipWriteResponse:
+    type: object
+    properties:
+      snap_token:
+        type: string
+    title: RelationshipWriteResponse
   Rewrite:
     type: object
     properties:
