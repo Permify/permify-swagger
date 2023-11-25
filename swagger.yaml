@@ -1,8 +1,8 @@
 swagger: '2.0'
 info:
   title: Permify API
-  description: Permify is an open-source authorization service for creating and maintaining fine-grained authorizations across your individual applications and services. Permify converts authorization data as relational tuples into a database you point at. We called that database a Write Database (WriteDB) and it behaves as a centralized data source for your authorization system. You can model of your authorization with Permify's DSL - Permify Schema - and perform access checks with a single API call anywhere on your stack. Access decisions made according to stored relational tuples.
-  version: v0.5.6
+  description: Permify is an open source authorization service for creating fine-grained and scalable authorization systems.
+  version: v0.6.0
   contact:
     name: API Support
     url: https://github.com/Permify/permify/issues
@@ -15,6 +15,7 @@ tags:
   - name: Watch
   - name: Schema
   - name: Data
+  - name: Bundle
   - name: Tenancy
 schemes:
   - https
@@ -88,6 +89,101 @@ paths:
           type: string
       tags:
         - Tenancy
+  /v1/tenants/{tenant_id}/bundle/delete:
+    post:
+      summary: delete bundle
+      operationId: bundle.delete
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/BundleDeleteResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name of the bundle to be deleted.
+            description: |-
+              BundleDeleteRequest is used to request the deletion of a bundle.
+              It contains the tenant_id to specify the tenant and the name of the bundle to be deleted.
+      tags:
+        - Bundle
+  /v1/tenants/{tenant_id}/bundle/read:
+    post:
+      summary: read bundle
+      operationId: bundle.read
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/BundleReadResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+      tags:
+        - Bundle
+  /v1/tenants/{tenant_id}/bundle/write:
+    post:
+      summary: write bundle
+      operationId: bundle.write
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/BundleWriteResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              bundles:
+                type: array
+                items:
+                  type: object
+                  $ref: '#/definitions/DataBundle'
+                description: Contains the bundle data to be written.
+            description: |-
+              BundleWriteRequest is used to request the writing of a bundle.
+              It contains the tenant_id to identify the tenant and the Bundles object.
+      tags:
+        - Bundle
   /v1/tenants/{tenant_id}/data/attributes/read:
     post:
       summary: read attribute(s)
@@ -212,6 +308,43 @@ paths:
             description: |-
               RelationshipReadRequest defines the structure of a request for reading relationships.
               It contains the necessary information such as tenant_id, metadata, and filter for the read operation.
+      tags:
+        - Data
+  /v1/tenants/{tenant_id}/data/run-bundle:
+    post:
+      summary: run bundle
+      operationId: bundle.run
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/BundleRunResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/Status'
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Name of the bundle to be executed.
+              arguments:
+                type: object
+                additionalProperties:
+                  type: string
+                description: Additional key-value pairs for execution arguments.
+            description: |-
+              BundleRunRequest is used to request the execution of a bundle.
+              It includes tenant_id, the name of the bundle, and additional arguments for execution.
       tags:
         - Data
   /v1/tenants/{tenant_id}/data/write:
@@ -924,6 +1057,36 @@ definitions:
        - ATTRIBUTE_TYPE_INTEGER_ARRAY: An integer array attribute type.
        - ATTRIBUTE_TYPE_DOUBLE: A double attribute type.
        - ATTRIBUTE_TYPE_DOUBLE_ARRAY: A double array attribute type.
+  BundleDeleteResponse:
+    type: object
+    properties:
+      name:
+        type: string
+  BundleReadResponse:
+    type: object
+    properties:
+      bundle:
+        $ref: '#/definitions/DataBundle'
+  BundleRunResponse:
+    type: object
+    properties:
+      snap_token:
+        type: string
+        description: Token related to the bundle execution.
+    description: |-
+      BundleRunResponse is the response for a BundleRunRequest.
+      It includes a snap_token, which may be used for tracking the execution or its results.
+  BundleWriteResponse:
+    type: object
+    properties:
+      names:
+        type: array
+        items:
+          type: string
+        description: Identifier or acknowledgment of the written bundle.
+    description: |-
+      BundleWriteResponse is the response for a BundleWriteRequest.
+      It includes a name which could be used as an identifier or acknowledgment.
   CheckResult:
     type: string
     enum:
@@ -1205,6 +1368,30 @@ definitions:
       Maps are constructed as `{'key_name': 'value'}`. Message construction is
       similar, but prefixed with a type name and composed of field ids:
       `types.MyType{field_id: 'value'}`.
+  DataBundle:
+    type: object
+    properties:
+      name:
+        type: string
+        description: '''name'' is a simple string field representing the name of the DataBundle.'
+      arguments:
+        type: array
+        items:
+          type: string
+        description: |-
+          'arguments' is a repeated field, which means it can contain multiple strings.
+          These are used to store a list of arguments related to the DataBundle.
+      operations:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/v1.Operation'
+        description: |-
+          'operations' is a repeated field containing multiple Operation messages.
+          Each Operation represents a specific action or set of actions to be performed.
+    description: |-
+      DataBundle is a message representing a bundle of data, which includes a name,
+      a list of arguments, and a series of operations.
   DataChange:
     type: object
     properties:
@@ -2164,6 +2351,40 @@ definitions:
           $ref: '#/definitions/Argument'
         title: Arguments passed to the rule
     description: Call represents a call to a rule. It includes the name of the rule and the arguments passed to it.
+  v1.Operation:
+    type: object
+    properties:
+      relationshipsWrite:
+        type: array
+        items:
+          type: string
+        description: |-
+          'relationships_write' is a repeated string field for storing relationship keys
+          that are to be written or created.
+      relationshipsDelete:
+        type: array
+        items:
+          type: string
+        description: |-
+          'relationships_delete' is a repeated string field for storing relationship keys
+          that are to be deleted or removed.
+      attributesWrite:
+        type: array
+        items:
+          type: string
+        description: |-
+          'attributes_write' is a repeated string field for storing attribute keys
+          that are to be written or created.
+      attributesDelete:
+        type: array
+        items:
+          type: string
+        description: |-
+          'attributes_delete' is a repeated string field for storing attribute keys
+          that are to be deleted or removed.
+    description: |-
+      Operation is a message representing a series of operations that can be performed.
+      It includes fields for writing and deleting relationships and attributes.
   v1alpha1.Reference:
     type: object
     properties:
