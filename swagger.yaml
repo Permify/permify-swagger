@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Permify API
   description: Permify is an open source authorization service for creating fine-grained and scalable authorization systems.
-  version: v0.6.0
+  version: v0.6.1
   contact:
     name: API Support
     url: https://github.com/Permify/permify/issues
@@ -2354,28 +2354,28 @@ definitions:
   v1.Operation:
     type: object
     properties:
-      relationshipsWrite:
+      relationships_write:
         type: array
         items:
           type: string
         description: |-
           'relationships_write' is a repeated string field for storing relationship keys
           that are to be written or created.
-      relationshipsDelete:
+      relationships_delete:
         type: array
         items:
           type: string
         description: |-
           'relationships_delete' is a repeated string field for storing relationship keys
           that are to be deleted or removed.
-      attributesWrite:
+      attributes_write:
         type: array
         items:
           type: string
         description: |-
           'attributes_write' is a repeated string field for storing attribute keys
           that are to be written or created.
-      attributesDelete:
+      attributes_delete:
         type: array
         items:
           type: string
